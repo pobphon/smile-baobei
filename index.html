@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🌸 สำหรับ 宝贝</title>
+<script defer src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500&family=Noto+Serif+TC:wght@400;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: #0d0e2e;
+    font-family: 'Sarabun', sans-serif;
+    overflow: hidden;
+  }
+
+  .scene {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at top, #1a1c4e 0%, #0d0e2e 60%, #060714 100%);
+  }
+
+  .bg-star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    animation: twinkleStar ease-in-out infinite;
+  }
+  @keyframes twinkleStar {
+    0%,100% { opacity: 0.15; }
+    50% { opacity: 0.9; }
+  }
+
+  .shooting-star {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: #fff;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 2;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+    animation: shoot linear forwards;
+  }
+  .shooting-star::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 90px;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9));
+    transform: translateY(-50%);
+  }
+  @keyframes shoot {
+    0%   { transform: translate(0,0); opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: translate(-420px, 420px); opacity: 0; }
+  }
+
+  /* ---------- STAGE 1: permission ---------- */
+  #stage-permission {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.3rem;
+    padding: 2rem;
+    text-align: center;
+    z-index: 10;
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  .cam-icon { font-size: 56px; animation: wiggle 2s ease-in-out infinite; }
+  @keyframes wiggle {
+    0%,100% { transform: rotate(-6deg); }
+    50%     { transform: rotate(6deg); }
+  }
+  .title-text {
+    font-size: 17px;
+    color: #d8d4ff;
+    line-height: 1.8;
+  }
+  .start-btn {
+    margin-top: 0.5rem;
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    color: #fff;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 999px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(108,92,231,0.4);
+    transition: transform 0.15s;
+  }
+  .start-btn:active { transform: scale(0.95); }
+
+  /* ---------- STAGE 2: camera + smile prompt ---------- */
+  #stage-camera {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9;
+  }
+  #stage-camera.active { display: flex; }
+
+  .video-wrap {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid rgba(255,255,255,0.2);
+    box-shadow: 0 0 40px rgba(108,92,231,0.4);
+  }
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1); /* mirror */
+  }
+
+  .prompt-text {
+    margin-top: 1.4rem;
+    font-size: 17px;
+    color: #d8d4ff;
+    text-align: center;
+    line-height: 1.7;
+  }
+  .smile-meter {
+    margin-top: 1rem;
+    width: 220px;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .smile-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #6c5ce7, #ffd166);
+    border-radius: 999px;
+    transition: width 0.15s ease-out;
+  }
+  .loading-text {
+    margin-top: 1rem;
+    font-size: 13px;
+    color: #8b87c4;
+  }
+
+  /* ---------- STAGE 2.5: connect stars into heart ---------- */
+  #stage-heart {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    touch-action: none;
+  }
+  #stage-heart.active { display: flex; }
+
+  .heart-instruction {
+    position: absolute;
+    top: 12%;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #d8d4ff;
+    font-size: 16px;
+    line-height: 1.7;
+    padding: 0 1.5rem;
+    z-index: 12;
+  }
+  .heart-instruction .sub {
+    font-size: 12px;
+    color: #8b87c4;
+    margin-top: 0.3rem;
+  }
+
+  #heartCanvas {
+    touch-action: none;
+  }
+
+  #heartCanvas {
+    touch-action: none;
+    overflow: visible;
+  }
+
+  .heart-star {
+    cursor: pointer;
+  }
+  .heart-star path {
+    fill: #ffd166;
+    filter: drop-shadow(0 0 8px rgba(255,209,102,0.9)) drop-shadow(0 0 16px rgba(255,209,102,0.4));
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: starPulse 2.4s ease-in-out infinite;
+  }
+  .heart-star.connected path {
+    fill: #ff6b9d;
+    filter: drop-shadow(0 0 14px rgba(255,107,157,1)) drop-shadow(0 0 28px rgba(255,107,157,0.6));
+    animation: starPop 0.5s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes starPulse {
+    0%,100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+  @keyframes starPop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.7); }
+    100% { transform: scale(1.25); }
+  }
+
+  .trail-line {
+    fill: none;
+    stroke: url(#trailGradient);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 10px rgba(255,107,157,0.9));
+  }
+
+  .finger-glow {
+    fill: rgba(255,255,255,0.9);
+    filter: drop-shadow(0 0 12px rgba(255,255,255,1));
+  }
+
+  /* cinematic flash + zoom for the big reveal */
+  #flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+  }
+  #flash-overlay.go {
+    animation: flashPop 0.6s ease-out forwards;
+  }
+  @keyframes flashPop {
+    0%   { opacity: 0; }
+    15%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .ray {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 0;
+    background: linear-gradient(to top, transparent, rgba(255,209,102,0.9), transparent);
+    transform-origin: bottom center;
+    pointer-events: none;
+    z-index: 8;
+    animation: rayShoot 1s ease-out forwards;
+  }
+  @keyframes rayShoot {
+    0%   { height: 0; opacity: 0; }
+    30%  { opacity: 1; }
+    100% { height: 50vh; opacity: 0; }
+  }
+
+  /* ---------- STAGE 3: revealed message ---------- */
+  #stage-message {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    opacity: 0;
+    transform: scale(0.5) rotate(-4deg);
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(.34,1.56,.64,1), transform 0.8s cubic-bezier(.34,1.56,.64,1);
+    z-index: 11;
+  }
+  #stage-message.visible {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    pointer-events: auto;
+  }
+  .card-inner {
+    background: rgba(255,255,255,0.98);
+    border-radius: 28px;
+    padding: 2.5rem 2rem 2.2rem;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(255,209,102,0.6), 0 0 80px rgba(108,92,231,0.5), 0 0 140px rgba(255,107,157,0.3);
+    position: relative;
+    z-index: 2;
+    animation: cardGlow 2.5s ease-in-out infinite;
+  }
+  @keyframes cardGlow {
+    0%,100% { box-shadow: 0 0 30px rgba(255,209,102,0.6), 0 0 80px rgba(108,92,231,0.5), 0 0 140px rgba(255,107,157,0.3); }
+    50%     { box-shadow: 0 0 40px rgba(255,209,102,0.8), 0 0 100px rgba(108,92,231,0.65), 0 0 170px rgba(255,107,157,0.45); }
+  }
+  .top-emoji {
+    font-size: 52px;
+    display: block;
+    margin-bottom: 1rem;
+    animation: heartbeat 1.2s ease-in-out infinite;
+  }
+  @keyframes heartbeat {
+    0%,100% { transform: scale(1) rotate(0deg); }
+    14% { transform: scale(1.3) rotate(-6deg); }
+    28% { transform: scale(1) rotate(0deg); }
+    42% { transform: scale(1.2) rotate(6deg); }
+  }
+  .msg-text {
+    font-size: 17px;
+    color: #4a2050;
+    line-height: 2;
+    letter-spacing: 0.2px;
+    opacity: 0;
+    animation: textIn 0.8s ease forwards 0.5s;
+  }
+  @keyframes textIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .from {
+    margin-top: 1.4rem;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 13px;
+    color: #6c5ce7;
+    letter-spacing: 1px;
+  }
+
+  /* confetti burst */
+  .confetti {
+    position: absolute;
+    border-radius: 2px;
+    pointer-events: none;
+    animation: burst 1s ease-out forwards;
+    z-index: 20;
+  }
+  @keyframes burst {
+    0%   { transform: translate(0,0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+  }
+
+  .error-text {
+    color: #c06080;
+    font-size: 14px;
+    line-height: 1.7;
+    text-align: center;
+    padding: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<div id="flash-overlay"></div>
+<div class="scene" id="scene">
+
+  <!-- Stage 1: ask permission -->
+  <div id="stage-permission">
+    <div class="cam-icon">👻</div>
+    <div class="title-text">มีของถึงจาก 宝贝 นะ<br><span style="font-size:13px;color:#8b87c4">หนายย ยิ้มสวยๆโชว์สิๆๆ</span></div>
+    <button class="start-btn" id="startBtn">เปิดกล้อง 📷</button>
+  </div>
+
+  <!-- Stage 2: camera + smile detection -->
+  <div id="stage-camera">
+    <div class="video-wrap">
+      <video id="video" autoplay muted playsinline></video>
+    </div>
+    <div class="prompt-text" id="promptText">ยิ้มหวานๆ ให้กล้องหน่อยสิ~ 😊</div>
+    <div class="smile-meter"><div class="smile-fill" id="smileFill"></div></div>
+    <div class="loading-text" id="loadingText">กำลังโหลดระบบจดจำใบหน้า...</div>
+  </div>
+
+  <!-- Stage 2.5: connect stars into a heart -->
+  <div id="stage-heart">
+    <div class="heart-instruction">
+      ลากดาวต่อกันเป็นรูปหัวใจซิ~ ✨
+      <div class="sub">แตะดวงแรกแล้วลากนิ้วผ่านดวงถัดไปเรื่อยๆ</div>
+    </div>
+    <svg id="heartCanvas" viewBox="0 0 320 320" width="320" height="320"></svg>
+  </div>
+
+  <!-- Stage 3: message revealed -->
+  <div id="stage-message">
+    <div class="card-inner">
+      <span class="top-emoji">🌷</span>
+      <p class="msg-text">
+        ~หึยย เห็นคนสวยยิ้มด้วยแหละเมื่อกี้<br><br>
+        มาให้กำลังใจจแน้วว จู้ๆน้าา<br>
+        รีบกลับมาเล่าเร็ววันนี้เจออะไรมาบ้างง <br>
+        รอโอ๋อยู่ตลอดน้าา <br>
+        <br><br>
+        ถึง 宝贝 คนจวยยย 💕
+      </p>
+      <div class="from">— จากโจพบ💌</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const scene = document.getElementById('scene');
+
+// static twinkling background stars
+for (let i = 0; i < 60; i++) {
+  const s = document.createElement('div');
+  s.className = 'bg-star';
+  const size = 1 + Math.random() * 2;
+  s.style.width = size + 'px';
+  s.style.height = size + 'px';
+  s.style.left = Math.random() * 100 + 'vw';
+  s.style.top = Math.random() * 100 + 'vh';
+  s.style.animationDuration = (2 + Math.random() * 3) + 's';
+  s.style.animationDelay = (Math.random() * 4) + 's';
+  scene.appendChild(s);
+}
+
+// occasional shooting stars
+function spawnShootingStar() {
+  const s = document.createElement('div');
+  s.className = 'shooting-star';
+  s.style.left = (40 + Math.random() * 50) + 'vw';
+  s.style.top = (Math.random() * 25) + 'vh';
+  s.style.animationDuration = (1 + Math.random() * 0.6) + 's';
+  scene.appendChild(s);
+  setTimeout(() => s.remove(), 2000);
+}
+setInterval(spawnShootingStar, 2200);
+setTimeout(spawnShootingStar, 400);
+
+function burst() {
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  const cols = ['#ff85a1','#ff5c8a','#ffb347','#c77dff','#80ffdb'];
+  for (let i = 0; i < 26; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 70 + Math.random() * 90;
+    el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    el.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+    el.style.left = cx + 'px';
+    el.style.top = cy + 'px';
+    el.style.background = cols[Math.floor(Math.random() * cols.length)];
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (6 + Math.random() * 8) + 'px';
+    scene.appendChild(el);
+    setTimeout(() => el.remove(), 1100);
+  }
+}
+
+let revealed = false;
+let stream = null;
+let detecting = false;
+
+function showHeartStage() {
+  detecting = false;
+  document.getElementById('stage-camera').classList.remove('active');
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+  }
+  document.getElementById('stage-heart').classList.add('active');
+  initHeartGame();
+}
+
+function revealMessage() {
+  if (revealed) return;
+  revealed = true;
+
+  // 1. flash
+  const flash = document.getElementById('flash-overlay');
+  flash.classList.add('go');
+
+  // 2. light rays bursting from center
+  for (let i = 0; i < 14; i++) {
+    const ray = document.createElement('div');
+    ray.className = 'ray';
+    const angle = (360 / 14) * i;
+    ray.style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
+    ray.style.animationDelay = (Math.random() * 0.15) + 's';
+    scene.appendChild(ray);
+    setTimeout(() => ray.remove(), 1300);
+  }
+
+  // 3. hide heart stage, show message after brief delay for flash to peak
+  setTimeout(() => {
+    document.getElementById('stage-heart').classList.remove('active');
+    document.getElementById('stage-message').classList.add('visible');
+    burst();
+    setTimeout(burst, 200);
+    setTimeout(burst, 450);
+  }, 280);
+}
+
+// ----- Heart tracing minigame -----
+const STAR_PATH = "M12 1.6 L14.9 8.6 L22.4 9.2 L16.7 14.1 L18.4 21.6 L12 17.6 L5.6 21.6 L7.3 14.1 L1.6 9.2 L9.1 8.6 Z";
+
+function initHeartGame() {
+  const svg = document.getElementById('heartCanvas');
+  svg.innerHTML = '';
+  svg.setAttribute('viewBox', '0 0 320 320');
+
+  // gradient defs for trail + base star glow
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  defs.innerHTML = `
+    <linearGradient id="trailGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd166"/>
+      <stop offset="100%" stop-color="#ff6b9d"/>
+    </linearGradient>
+  `;
+  svg.appendChild(defs);
+
+  const points = [];
+  const N = 10;
+  for (let i = 0; i < N; i++) {
+    const t = (i / N) * Math.PI * 2;
+    const x = 16 * Math.pow(Math.sin(t), 3);
+    const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+    points.push({ x: 160 + x * 7, y: 160 + y * 7, connected: false });
+  }
+
+  let connectedCount = 0;
+  let dragging = false;
+
+  // permanent connected-segment path (grows as stars connect)
+  const committedPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  committedPath.setAttribute('class', 'trail-line');
+  committedPath.setAttribute('d', '');
+  svg.appendChild(committedPath);
+
+  // live trail following the finger from last connected point
+  const livePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  livePath.setAttribute('class', 'trail-line');
+  livePath.setAttribute('opacity', '0.55');
+  livePath.setAttribute('d', '');
+  svg.appendChild(livePath);
+
+  // finger glow dot
+  const fingerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  fingerDot.setAttribute('r', '6');
+  fingerDot.setAttribute('class', 'finger-glow');
+  fingerDot.style.display = 'none';
+  svg.appendChild(fingerDot);
+
+  // star icons
+  const starEls = points.map((p, i) => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'heart-star');
+    g.style.animationDelay = (i * 0.15) + 's';
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', STAR_PATH);
+    const scale = 1.5;
+    g.setAttribute('transform', `translate(${p.x - 12*scale}, ${p.y - 12*scale}) scale(${scale})`);
+    g.appendChild(path);
+    svg.appendChild(g);
+    return g;
+  });
+
+  function dist(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
+
+  function getSvgPoint(clientX, clientY) {
+    const rect = svg.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left) * (320 / rect.width),
+      y: (clientY - rect.top) * (320 / rect.height)
+    };
+  }
+
+  function committedD() {
+    if (connectedCount === 0) return '';
+    let d = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < connectedCount; i++) d += ` L ${points[i].x} ${points[i].y}`;
+    return d;
+  }
+
+  function tryConnect(px, py) {
+    if (connectedCount >= points.length) return;
+    const next = points[connectedCount];
+    if (dist(px, py, next.x, next.y) < 28) {
+      next.connected = true;
+      starEls[connectedCount].classList.add('connected');
+      connectedCount++;
+      committedPath.setAttribute('d', committedD());
+
+      if (connectedCount === points.length) {
+        // close the loop back to the first star
+        const d = committedD() + ` L ${points[0].x} ${points[0].y}`;
+        committedPath.setAttribute('d', d);
+        livePath.setAttribute('d', '');
+        fingerDot.style.display = 'none';
+        document.querySelector('.heart-instruction').innerHTML = 'หัวใจสมบูรณ์แล้ว~ 💖';
+        setTimeout(revealMessage, 500);
+      }
+    }
+  }
+
+  function handleMove(clientX, clientY) {
+    if (!dragging || connectedCount >= points.length) return;
+    const p = getSvgPoint(clientX, clientY);
+    fingerDot.style.display = 'block';
+    fingerDot.setAttribute('cx', p.x);
+    fingerDot.setAttribute('cy', p.y);
+
+    if (connectedCount > 0) {
+      const last = points[connectedCount - 1];
+      livePath.setAttribute('d', `M ${last.x} ${last.y} L ${p.x} ${p.y}`);
+    }
+    tryConnect(p.x, p.y);
+  }
+
+  function startDrag(clientX, clientY) {
+    dragging = true;
+    const p = getSvgPoint(clientX, clientY);
+    // allow starting the trace from anywhere near the first star
+    if (connectedCount === 0) tryConnect(p.x, p.y);
+  }
+
+  function endDrag() {
+    dragging = false;
+    fingerDot.style.display = 'none';
+    if (connectedCount < points.length) livePath.setAttribute('d', '');
+  }
+
+  svg.addEventListener('pointerdown', (e) => startDrag(e.clientX, e.clientY));
+  svg.addEventListener('pointermove', (e) => handleMove(e.clientX, e.clientY));
+  window.addEventListener('pointerup', endDrag);
+
+  svg.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  svg.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    handleMove(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener('touchend', endDrag);
+}
+
+async function startCamera() {
+  document.getElementById('stage-permission').style.opacity = '0';
+  document.getElementById('stage-permission').style.pointerEvents = 'none';
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: 320, height: 320 }
+    });
+  } catch (err) {
+    document.getElementById('stage-permission').innerHTML =
+      '<div class="error-text">ไม่สามารถเปิดกล้องได้ 😢<br>ลองอนุญาตการเข้าถึงกล้องในเบราว์เซอร์ดูนะ</div>';
+    document.getElementById('stage-permission').style.opacity = '1';
+    document.getElementById('stage-permission').style.pointerEvents = 'auto';
+    return;
+  }
+
+  document.getElementById('stage-permission').style.display = 'none';
+  document.getElementById('stage-camera').classList.add('active');
+
+  const video = document.getElementById('video');
+  video.srcObject = stream;
+  await video.play();
+
+  // wait for face-api.js to be loaded
+  let tries = 0;
+  while (typeof faceapi === 'undefined' && tries < 100) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+
+  if (typeof faceapi === 'undefined') {
+    document.getElementById('loadingText').textContent = 'โหลดระบบไม่สำเร็จ ลองรีเฟรชดูนะ 🥺';
+    return;
+  }
+
+  const MODEL_URLS = [
+    'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights',
+    'https://justadudewhohacks.github.io/face-api.js/models',
+    'https://unpkg.com/face-api.js@0.22.2/weights'
+  ];
+
+  let modelLoaded = false;
+  for (const url of MODEL_URLS) {
+    try {
+      await faceapi.nets.tinyFaceDetector.loadFromUri(url);
+      await faceapi.nets.faceExpressionNet.loadFromUri(url);
+      modelLoaded = true;
+      break;
+    } catch (e) {
+      continue;
+    }
+  }
+
+  if (!modelLoaded) {
+    document.getElementById('loadingText').textContent = 'โหลดโมเดลไม่สำเร็จ เช็คอินเทอร์เน็ตดูนะ 🥺';
+    return;
+  }
+
+  document.getElementById('loadingText').textContent = 'พร้อมแล้ว ยิ้มเลย! 😊';
+  detecting = true;
+  detectSmile(video);
+}
+
+async function detectSmile(video) {
+  const fill = document.getElementById('smileFill');
+  const prompt = document.getElementById('promptText');
+  let smileHoldStart = null;
+  const HOLD_DURATION = 1100; // ms, must hold smile this long
+  let transitioning = false;
+
+  const loop = async () => {
+    if (!detecting || revealed || transitioning) return;
+    try {
+      const result = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
+        .withFaceExpressions();
+
+      if (result && result.expressions) {
+        const happy = result.expressions.happy || 0;
+
+        if (happy > 0.45) {
+          if (smileHoldStart === null) smileHoldStart = Date.now();
+          const heldFor = Date.now() - smileHoldStart;
+          const progress = Math.min(heldFor / HOLD_DURATION, 1);
+          fill.style.width = (progress * 100) + '%';
+
+          if (progress < 1) {
+            prompt.textContent = 'จับยิ้มได้แล้ว~ ค้างไว้แป๊บนึงนะ 🥰';
+          } else {
+            transitioning = true;
+            prompt.textContent = 'เจอแล้ว~ 🌟';
+            setTimeout(() => { showHeartStage(); }, 450);
+            return;
+          }
+        } else {
+          smileHoldStart = null;
+          fill.style.width = Math.min(happy * 100, 100) + '%';
+          if (happy > 0.15) {
+            prompt.textContent = 'ใกล้แล้วๆ ยิ้มอีกนิดนึง~ 😄';
+          } else {
+            prompt.textContent = 'ยิ้มหวานๆ ให้กล้องหน่อยสิ~ 😊';
+          }
+        }
+      } else {
+        fill.style.width = '0%';
+        smileHoldStart = null;
+        prompt.textContent = 'ขยับหน้าให้อยู่ในวงกลมหน่อยย มะเบลล';
+      }
+    } catch (e) {
+      // ignore detection errors, keep trying
+    }
+    requestAnimationFrame(loop);
+  };
+  loop();
+}
+
+document.getElementById('startBtn').addEventListener('click', startCamera);
+</script>
+</body>
+</html>
